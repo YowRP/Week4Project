@@ -1,6 +1,5 @@
 INVENTORY_FILE = "inventory.txt"
 
-
 def load_orders():
     """Load previously saved orders, or start empty if the file doesn't exist."""
     orders = []
@@ -20,21 +19,12 @@ def load_orders():
         orders = []
     return orders
 
-
 def display_orders(orders):
     """Print all current orders."""
     print("Current Orders:\n")
     for order_id, product_name, quantity in orders:
         print(str(order_id) + ", " + product_name + ", " + str(quantity))
     print()
-
-
-def get_next_id(orders):
-    """Work out the next order ID, continuing from the last one saved."""
-    if len(orders) == 0:
-        return 1001
-    last_order = orders[-1]
-    return last_order[0] + 1
 
 
 def get_valid_input(orders):
@@ -52,12 +42,12 @@ def get_valid_input(orders):
     order_id = get_next_id(orders)
     return order_id, product_name, int(quantity_input)
 
-
-def save_orders(orders):
-    """Save all orders back to inventory.txt in the required format."""
-    with open(INVENTORY_FILE, "w", encoding="utf-8") as file:
-        for order_id, product_name, quantity in orders:
-            file.write(str(order_id) + "," + product_name + "," + str(quantity) + "\n")
+def get_next_id(orders):
+    """Work out the next order ID, continuing from the last one saved."""
+    if len(orders) == 0:
+        return 1001
+    last_order = orders[-1]
+    return last_order[0] + 1
 
 
 def main():
