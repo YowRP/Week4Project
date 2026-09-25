@@ -1,106 +1,82 @@
-import json
-from pathlib import Path
-
-INVENTORY_FILE = Path(__file__).with_name("inventory.txt")
+INVENTORY_FILE = "inventory.txt"
 
 
-def load_inventory():
-    """Load the saved inventory total and transaction history."""
-    if not INVENTORY_FILE.exists():
-        return 0, []
-
+def load_orders():
+    """Load previously saved orders, or start empty if the file doesn't exist."""
+    orders = []
     try:
-        with INVENTORY_FILE.open("r", encoding="utf-8") as file:
-            inventory_data = json.load(file)
-
-        if not isinstance(inventory_data, dict):
-            return 0, []
-
-        total_units = inventory_data.get("total_units", 0)
-        transaction_history = inventory_data.get("transaction_history", [])
-
-        if not isinstance(total_units, int):
-            total_units = 0
-
-        if not isinstance(transaction_history, list):
-            transaction_history = []
-
-        return total_units, transaction_history
-
-    except (json.JSONDecodeError, OSError, TypeError, ValueError):
-        return 0, []
+        with open(INVENTORY_FILE, "r", encoding="utf-8") as file:
+            lines = file.readlines()
+        for line in lines:
+            line = line.strip()
+            if line == "":
+                continue
+            parts = line.split(",")
+            order_id = int(parts[0])
+            product_name = parts[1]
+            quantity = int(parts[2])
+            orders.append((order_id, product_name, quantity))
+    except FileNotFoundError:
+        orders = []
+    return orders
 
 
-def save_inventory(total_units, transaction_history):
-    """Save the inventory total and transaction history to the file."""
-    inventory_data = {
-        "total_units": total_units,
-        "transaction_history": transaction_history,
-    }
-
-    with INVENTORY_FILE.open("w", encoding="utf-8") as file:
-        json.dump(inventory_data, file, indent=4)
-        file.write("\n")
+def display_orders(orders):
+    """Print all current orders."""
+    print("Current Orders:\n")
+    for order_id, product_name, quantity in orders:
+        print(str(order_id) + ", " + product_name + ", " + str(quantity))
+    print()
 
 
-def get_valid_input():
-    """Ask the user for a valid stock quantity."""
-    failed_attempts = 0
-
-    while True:
-        user_input = input("Please enter the stock quantity: ").strip()
-
-        if user_input.lower() in ("quit", "q"):
-            return None, failed_attempts
-
-        if not user_input.isdigit():
-            print("Invalid input. Please enter a valid number.")
-            failed_attempts += 1
-            continue
-
-        return int(user_input), failed_attempts
+def get_next_id(orders):
+    """Work out the next order ID, continuing from the last one saved."""
+    if len(orders) == 0:
+        return 1001
+    last_order = orders[-1]
+    return last_order[0] + 1
 
 
-def process_delivery(current_total, new_value):
-    """Add a new delivery amount to the current inventory total."""
-    return current_total + new_value
+def get_valid_input(orders):
+    """Ask the user for a new product name and quantity."""
+    product_name = input("Enter Product Name: ").strip()
+
+    if product_name.lower() in ("quit", "q"):
+        return None
+
+    quantity_input = input("Enter Quantity: ").strip()
+    if not quantity_input.isdigit():
+        print("Invalid input. Please enter a valid number.")
+        return get_valid_input(orders)
+
+    order_id = get_next_id(orders)
+    return order_id, product_name, int(quantity_input)
 
 
-def calculate_tax(amount):
-    """Calculate 10% tax on the transaction amount."""
-    tax_rate = 0.1
-    return amount * tax_rate
-
-
-def generate_report(total_units, deliveries_processed, failed_attempts):
-    """Display the final inventory report."""
-    print("Total units will be : " + str(total_units))
-    print("Deliveries processed : " + str(deliveries_processed))
-    print("Failed attempts : " + str(failed_attempts))
+def save_orders(orders):
+    """Save all orders back to inventory.txt in the required format."""
+    with open(INVENTORY_FILE, "w", encoding="utf-8") as file:
+        for order_id, product_name, quantity in orders:
+            file.write(str(order_id) + "," + product_name + "," + str(quantity) + "\n")
 
 
 def main():
-    """Run the inventory tracking program."""
-    total_units, transaction_history = load_inventory()
-    deliveries_processed = 0
-    failed_attempts = 0
+    """Run the order tracking program."""
+    orders = load_orders()
+    display_orders(orders)
 
     while True:
-        user_input, attempts = get_valid_input()
-        failed_attempts += attempts
-
-        if user_input is None:
+        new_order = get_valid_input(orders)
+        if new_order is None:
             break
 
-        total_units = process_delivery(total_units, user_input)
-        transaction_history.append(user_input)
-        calculate_tax(user_input)
-        deliveries_processed += 1
+        orders.append(new_order)
+        print("\nNew Order Added:")
+        print(str(new_order[0]) + "," + new_order[1] + "," + str(new_order[2]) + "\n")
 
-    generate_report(total_units, deliveries_processed, failed_attempts)
-    save_inventory(total_units, transaction_history)
+    save_orders(orders)
+    print("Order successfully saved to inventory.txt")
 
 
 if __name__ == "__main__":
     main()
-
