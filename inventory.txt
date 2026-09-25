@@ -1,0 +1,5 @@
+1001,computer,40
+1002,earphones,70
+1003,cruella,50
+1004,Auditor,80
+1005,computer 2,70
